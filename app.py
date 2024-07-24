@@ -53,7 +53,6 @@ class SECEdgar:
                 primDocDes = primaryDocDescript[i]
                 if filingYear.startswith(year) and '10-K' in primDocDes: ## If it matches given year and Annual Filing Document
                     doc_url = f"https://www.sec.gov/Archives/edgar/data/{cik.zfill(10)}/{accessNum.replace('-','')}/{primDocYear}" ## Document Specific to Company depending on yearly or quarterly.
-                    print(doc_url)
                     reqDoc = requests.get(doc_url, headers=self.headers)
                     return reqDoc.content
     
