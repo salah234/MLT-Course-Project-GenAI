@@ -6,6 +6,7 @@ class SECEdgar:
         self.dictname = {} ## Company names
         self.tickerdict = {} ## Stock Ticker
         self.headers = {'user-agent': 'MLT CP salahm2130@gmail.com'}
+        self.cik = None
         req = requests.get(self.urlfile, headers=self.headers)
         if req.status_code == 200: # If fetching data was successful
             reqjson = req.json() # In JSON format since web written in JavaScript.
@@ -29,18 +30,24 @@ class SECEdgar:
             return cik, ticker, cmpny_name
     
     def findFillings(self, cik): ## Finding through the submission files with JSON dictionaries 
-        url = f"https://data.sec.gov/submissions/CIK{cik.zfill(10)}.json"
+        str_cik = str(cik)
+        url = f"https://data.sec.gov/submissions/CIK{str_cik.zfill(10)}.json"
         reqUrl = requests.get(url, headers=self.headers)
         print(reqUrl.status_code)
         if reqUrl.status_code == 200:
             reqUrlJSON = reqUrl.json()
             return reqUrlJSON
         else:
+            print(2)
             return None
     
-    def annual_filing(self, cik, year): 
+    def annual_filing(self, companyName, year): 
+        ## Do name_to_cik function
+        file = self.name_to_cik(companyName)
+        cik, ticker, cname = file
         totalFilings = self.findFillings(cik)
         if totalFilings:
+
             regFilings = totalFilings['filings']['recent']
             fileDate = regFilings['filingDate'] ## Year of Document File 
             accessionNum = regFilings['accessionNumber'] ## Accession Number
@@ -51,12 +58,15 @@ class SECEdgar:
                 accessNum = accessionNum[i]
                 primDocYear = primaryDoc[i] 
                 primDocDes = primaryDocDescript[i]
-                if filingYear.startswith(year) and '10-K' in primDocDes: ## If it matches given year and Annual Filing Document
-                    doc_url = f"https://www.sec.gov/Archives/edgar/data/{cik.zfill(10)}/{accessNum.replace('-','')}/{primDocYear}" ## Document Specific to Company depending on yearly or quarterly.
+                if filingYear.startswith(str(year)) and '10-K' in primDocDes: ## If it matches given year and Annual Filing Document
+                    print(1)
+                    doc_url = f"https://www.sec.gov/Archives/edgar/data/{str(cik).zfill(10)}/{accessNum.replace('-','')}/{primDocYear}" ## Document Specific to Company depending on yearly or quarterly.
                     reqDoc = requests.get(doc_url, headers=self.headers)
-                    return reqDoc.content
+                    return reqDoc.content, doc_url
     
-    def quarterly_filing(self, cik, year, quarter):
+    def quarterly_filing(self, companyName, year, quarter):
+        res = self.name_to_cik(companyName)
+        cik, ticker, cname = res
         totalFilings = self.findFillings(cik)
         if totalFilings:
             regFilings = totalFilings['filings']['recent']
@@ -67,17 +77,19 @@ class SECEdgar:
             quarter_Yr = {1: ('01', '02', '03'), 2: ('04', '05', '06'), 3: ('07', '08', '09'), 4: ('10', '11', '12')} ## Representation of Months in quarter of yr categories.
             for i in range(len(fileDate)):
                 filingYear = fileDate[i] 
+                print(filingYear)
                 filingMonth = fileDate[i].split('-')[1]
                 accessNum = accessionNum[i]
                 primDocYear = primaryDoc[i] 
                 primDocDes = primaryDocDescript[i]
-                if filingYear.startswith(year) and '10-Q' in primDocDes and filingMonth in quarter_Yr[quarter]:
-                    doc_url = f"https://www.sec.gov/Archives/edgar/data/{cik.zfill(10)}/{accessNum.replace('-','')}/{primDocYear}" ## Document Specific to Company depending on yearly or quarterly.
+                if filingYear.startswith(str(year)) and '10-Q' in primDocDes and filingMonth in quarter_Yr.get(quarter, []):
+                    doc_url = f"https://www.sec.gov/Archives/edgar/data/{str(cik).zfill(10)}/{accessNum.replace('-','')}/{primDocYear}" ## Document Specific to Company depending on yearly or quarterly.
                     reqDoc = requests.get(doc_url, headers=self.headers)
-                    return reqDoc.content
+                    return reqDoc.content, doc_url
+            
                 
 
-            
+                
                 
                 
             
@@ -95,5 +107,5 @@ class SECEdgar:
     
         
 
-x = SECEdgar('https://www.sec.gov/files/company_tickers.json')  
-print(x.quarterly_filing('320193', '2023', 2))     
+x = SECEdgar('https://www.sec.gov/files/company_tickers.json') 
+print(x.annual_filing('Apple Inc.', 2023))     
