@@ -63,6 +63,7 @@ class SECEdgar:
                     doc_url = f"https://www.sec.gov/Archives/edgar/data/{str(cik).zfill(10)}/{accessNum.replace('-','')}/{primDocYear}" ## Document Specific to Company depending on yearly or quarterly.
                     reqDoc = requests.get(doc_url, headers=self.headers)
                     return reqDoc.content, doc_url
+        return f"No filings found for {companyName} in {year}."
     
     def quarterly_filing(self, companyName, year, quarter):
         res = self.name_to_cik(companyName)
@@ -108,4 +109,6 @@ class SECEdgar:
         
 
 x = SECEdgar('https://www.sec.gov/files/company_tickers.json') 
-print(x.annual_filing('Apple Inc.', 2023))     
+companyInput = input("What Company do you want to see their filling? ")
+yearInput = input("What year? ")
+print(x.annual_filing(companyInput, yearInput))       
